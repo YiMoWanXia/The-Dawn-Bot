@@ -8,7 +8,6 @@ from loader import config
 from models import Account
 
 from .api import DawnExtensionAPI
-from utils import check_email_for_link, check_if_email_valid
 from database import Accounts
 from .exceptions.base import APIError
 
@@ -39,74 +38,6 @@ class Bot(DawnExtensionAPI):
             except Exception as e:
                 logger.error(f"Account: {self.account_data.email} | Error occurred: {str(e)} | Retrying...")
 
-    async def process_registration(self):
-        task_id = None
-
-        try:
-            if not await check_if_email_valid(
-                self.account_data.imap_server,
-                self.account_data.email,
-                self.account_data.password,
-            ):
-                logger.error(f"Account: {self.account_data.email} | Invalid email")
-                return False
-
-            logger.info(f"Account: {self.account_data.email} | Registering...")
-            puzzle_id, answer, task_id = await self.get_captcha_data()
-
-            await self.register(puzzle_id, answer)
-            logger.info(
-                f"Account: {self.account_data.email} | Successfully registered, waiting for email..."
-            )
-
-            confirm_url = await check_email_for_link(
-                imap_server=self.account_data.imap_server,
-                email=self.account_data.email,
-                password=self.account_data.password,
-            )
-
-            if confirm_url is None:
-                logger.error(
-                    f"Account: {self.account_data.email} | Confirmation link not found"
-                )
-                return False
-
-            logger.success(
-                f"Account: {self.account_data.email} | Link found, confirming registration..."
-            )
-            response = await self.clear_request(url=confirm_url)
-            if response.status_code == 200:
-                logger.success(
-                    f"Account: {self.account_data.email} | Successfully confirmed registration"
-                )
-                return True
-
-            logger.error(
-                f"Account: {self.account_data.email} | Failed to confirm registration"
-            )
-            return False
-
-        except APIError as error:
-            if error.error_message in error.BASE_MESSAGES:
-                if error.error_message == "Incorrect answer. Try again!":
-                    logger.warning(
-                        f"Account: {self.account_data.email} | Captcha answer incorrect, re-solving..."
-                    )
-                    await self.report_invalid_puzzle(task_id) if task_id else None
-                else:
-                    logger.warning(
-                        f"Account: {self.account_data.email} | Captcha expired, re-solving..."
-                    )
-                return await self.process_registration()
-
-            logger.error(f"Account: {self.account_data.email} | Failed to register: {error}")
-
-        except Exception as error:
-            logger.error(
-                f"Account: {self.account_data.email} | Failed to register: {error}"
-            )
-
-        return False
 
     @staticmethod
     def get_sleep_until() -> datetime:
@@ -145,25 +76,6 @@ class Bot(DawnExtensionAPI):
 
         return False
 
-    async def process_complete_tasks(self):
-        try:
-            db_account_data = await Accounts.get_account(email=self.account_data.email)
-            if db_account_data is None:
-                if not await self.login_new_account():
-                    return False
-            else:
-                await self.handle_existing_account(db_account_data, check_sleep=False)
-
-            logger.info(f"Account: {self.account_data.email} | Completing tasks...")
-            await self.complete_tasks()
-            logger.success(
-                f"Account: {self.account_data.email} | Successfully completed tasks"
-            )
-
-        except Exception as error:
-            logger.error(
-                f"Account: {self.account_data.email} | Failed to complete tasks: {error}"
-            )
 
     async def login_new_account(self):
         task_id = None

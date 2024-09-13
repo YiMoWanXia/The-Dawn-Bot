@@ -158,23 +158,6 @@ class DawnExtensionAPI:
 
         return response.get("imgBase64")
 
-    async def register(self, puzzle_id: str, answer: str) -> dict:
-        json_data = {
-            "firstname": names.get_first_name(),
-            "lastname": names.get_last_name(),
-            "email": self.account_data.email,
-            "mobile": "",
-            "password": self.account_data.password,
-            "country": "+91",
-            "referralCode": "",
-            "puzzle_id": puzzle_id,
-            "ans": answer,
-        }
-
-        return await self.send_request(
-            method="/v1/puzzle/validate-register",
-            json_data=json_data,
-        )
 
     async def keepalive(self) -> dict | str:
         headers = {
@@ -214,27 +197,6 @@ class DawnExtensionAPI:
 
         return response["data"]
 
-    async def complete_tasks(self, tasks: list[str] = None, delay: int = 1) -> None:
-        if not tasks:
-            tasks = ["telegramid", "discordid", "twitter_x_id"]
-
-        headers = self.session.headers.copy()
-        headers["authorization"] = f'Brearer {self.session.headers["Berear"]}'
-        headers["content-type"] = "application/json"
-        del headers["Berear"]
-
-        for task in tasks:
-            json_data = {
-                task: task,
-            }
-
-            await self.send_request(
-                method="/v1/profile/update",
-                json_data=json_data,
-                headers=headers,
-            )
-
-            await asyncio.sleep(delay)
 
     async def verify_session(self) -> bool:
         try:
