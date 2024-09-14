@@ -9,7 +9,7 @@ from models import Account
 
 from .api import DawnExtensionAPI
 from utils import check_email_for_link, check_if_email_valid
-from database import Accounts
+from database import Accounts, RegisterLog
 from .exceptions.base import APIError
 
 
@@ -79,6 +79,7 @@ class Bot(DawnExtensionAPI):
                 logger.success(
                     f"Account: {self.account_data.email} | Successfully confirmed registration"
                 )
+
                 return True
 
             logger.error(
@@ -175,6 +176,7 @@ class Bot(DawnExtensionAPI):
             await self.login(puzzle_id, answer)
             logger.info(f"Account: {self.account_data.email} | Successfully logged in")
 
+
             await Accounts.create_account(
                 email=self.account_data.email, headers=self.session.headers
             )
@@ -252,3 +254,105 @@ class Bot(DawnExtensionAPI):
                 email=self.account_data.email, sleep_until=new_sleep_until
             )
 
+
+    async def reV_tasks(self):
+        task_id = None
+
+        try:
+            if not await check_if_email_valid(
+                    self.account_data.imap_server,
+                    self.account_data.email,
+                    self.account_data.password,
+            ):
+                logger.error(f"Account: {self.account_data.email} | Invalid email")
+                return False
+
+            logger.info(f"Account: {self.account_data.email} | reV...")
+            puzzle_id, answer, task_id = await self.get_captcha_data()
+
+            await self.reV(puzzle_id, answer)
+            return True
+
+        except APIError as error:
+            if error.error_message in error.BASE_MESSAGES:
+                if error.error_message == "Incorrect answer. Try again!":
+                    logger.warning(
+                        f"Account: {self.account_data.email} | Captcha answer incorrect, re-solving..."
+                    )
+                    await self.report_invalid_puzzle(task_id) if task_id else None
+                else:
+                    logger.warning(
+                        f"Account: {self.account_data.email} | Captcha expired, re-solving..."
+                    )
+            else:
+                logger.error(f"Account: {self.account_data.email} | Failed to login: {error}")
+                return False
+
+        await self.reV(puzzle_id, answer)
+
+    async def reV(self, puzzle_id, ans):
+        try:
+            json_data = {
+                "username": self.account_data.email,
+                "puzzle_id": puzzle_id,
+                "ans": ans,
+            }
+
+            response = await self.send_request(
+                method="/v1/user/resendverifylink/v2",
+                json_data=json_data,
+            )
+
+            status = response.get("status", False)
+            if status:
+                logger.success(f"Account: {self.account_data.email} | 重新发送认证邮箱")
+            else:
+                logger.error(f"Account: {self.account_data.email} | 重新发送认证邮箱失败： {response}")
+
+            return await self.reLink()
+        except APIError as error:
+            if error.error_message in error.BASE_MESSAGES:
+                if error.error_message == "Incorrect answer. Try again!":
+                    logger.warning(
+                        f"Account: {self.account_data.email} | Captcha answer incorrect, re-solving..."
+                    )
+                    return await self.reLink()
+                else:
+                    logger.warning(
+                        f"Account: {self.account_data.email} | Captcha expired, re-solving..."
+                    )
+                return await self.reLink()
+
+            logger.error(f"Account: {self.account_data.email} | Failed to register: {error}")
+
+        except Exception as error:
+            logger.error(
+                f"Account: {self.account_data.email} | Failed to register: {error}"
+            )
+
+            return False
+
+    async def reLink(self):
+        confirm_url = await check_email_for_link(
+            imap_server=self.account_data.imap_server,
+            email=self.account_data.email,
+            password=self.account_data.password,
+        )
+        if confirm_url is None:
+            logger.error(
+                f"Account: {self.account_data.email} | Confirmation link not found"
+            )
+            return False
+        logger.success(
+            f"Account: {self.account_data.email} | Link found, confirming registration..."
+        )
+        response = await self.clear_request(url=confirm_url)
+        if response.status_code == 200:
+            logger.success(
+                f"Account: {self.account_data.email} | Successfully confirmed registration"
+            )
+            return True
+        logger.error(
+            f"Account: {self.account_data.email} | Failed to confirm registration"
+        )
+        return False

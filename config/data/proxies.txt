@@ -1,3 +1,1 @@
-type://proxy
-type://proxy
-type://proxy
+socks5://B205277F87AF2FD0-residential-country_US-r_10m-s_a3ikGbmfQi:7rv0CfmE@gate.nstproxy.io:24125

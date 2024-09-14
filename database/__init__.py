@@ -1,2 +1,2 @@
-from .models import Accounts
+from .models import Accounts, RegisterLog
 from .settings import initialize_database

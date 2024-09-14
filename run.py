@@ -22,6 +22,10 @@ async def run_module_safe(
 
 async def process_registration(bot: Bot) -> tuple[str, str, bool]:
     status = await bot.process_registration()
+    # if status:
+    #     logger.add('./logs/r-success.log', format="{time} {level} {message}", filter=lambda record: record["extra"].get("email") == bot.account_data.email)
+    #     logger.info("Registration successful", extra={"email": bot.account_data.email})
+
     await bot.close_session()
     return bot.account_data.email, bot.account_data.password, status
 
@@ -34,6 +38,13 @@ async def process_farming(bot: Bot) -> None:
 async def process_complete_tasks(bot: Bot) -> None:
     await bot.process_complete_tasks()
     await bot.close_session()
+
+async def reV_tasks(bot: Bot) -> None:
+    with open('config/data/success.txt', "r", encoding="utf-8") as file:
+        data = [line.strip() for line in file]
+        if not data.__contains__(bot.account_data.email):
+            await bot.reV_tasks()
+            await bot.close_session()
 
 
 # async def export_account_wallet(bot: Bot) -> tuple[str, str]:
@@ -52,7 +63,8 @@ async def run():
     await initialize_database()
 
     while True:
-        Console().build()
+        # Console().build()
+        config.module = "re"
 
         if config.module == "register":
             if not config.accounts_to_register:
@@ -82,6 +94,10 @@ async def run():
 
             random.shuffle(config.accounts_to_farm)
             await run_module(config.accounts_to_farm, process_complete_tasks)
+
+        elif config.module == "re":
+            random.shuffle(config.accounts_to_register)
+            await run_module(config.accounts_to_register, reV_tasks)
 
         # elif config.module == "export_wallets":
         #     if not config.accounts_to_farm:

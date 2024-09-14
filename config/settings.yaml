@@ -2,7 +2,7 @@ threads: 5 # number of threads to run (min 1)
 keepalive_interval: 120 # seconds
 
 two_captcha_api_key: ""
-anti_captcha_api_key: ""
+anti_captcha_api_key: "b517522bd113db792d8a78a69f5a79e2"
 captcha_module: anticaptcha # 2captcha or anticaptcha
 
 imap_settings:

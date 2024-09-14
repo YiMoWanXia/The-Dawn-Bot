@@ -26,10 +26,11 @@ async def check_email_for_link(
     imap_server: str,
     email: str,
     password: str,
-    max_attempts: int = 8,
+    max_attempts: int = 1,
     delay_seconds: int = 5,
 ) -> Optional[str]:
-    link_pattern = r"https://www\.aeropres\.in/chromeapi/dawn/v1/user/verifylink\?key=[a-f0-9-]+"
+    # link_pattern = r"https://www\.aeropres\.in/chromeapi/dawn/v1/user/verifylink\?key=[a-f0-9-]+"
+    link_pattern = r'<a\s+href="([^"]+)"[^>]*>'
     logger.info(f"Account: {email} | Checking email for link...")
 
     try:
@@ -70,6 +71,7 @@ async def check_email_for_link(
 
             link = await search_in_spam()
             if link:
+
                 return link
 
         logger.error(
@@ -90,7 +92,8 @@ def search_for_link_sync(mailbox: MailBox, link_pattern: str) -> Optional[str]:
         if body:
             match = re.search(link_pattern, body)
             if match:
-                return match.group(0)
+                # return match.group(0)
+                return match.group(1)
 
     return None
 
@@ -102,3 +105,8 @@ def search_for_link_in_spam_sync(
         mailbox.folder.set(spam_folder)
         return search_for_link_sync(mailbox, link_pattern)
     return None
+
+
+if __name__ == '__main__':
+    # asyncio.run(check_email_for_link('imap-mail.outlook.com', 'odrunrabaha@hotmail.com', 'p9su0OnZtVi3'))
+    asyncio.run(check_email_for_link('imap-mail.outlook.com', 'lelossudak@hotmail.com', 'a7hVk6zCSgfbCs4'))
