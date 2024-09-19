@@ -1,36 +1,4 @@
-# Bot for Dawn Extension [1.3]
-
-## 🔗 Links
-
-🔔 CHANNEL: https://t.me/JamBitPY
-
-💬 CHAT: https://t.me/JamBitChat
-
-💰 DONATION EVM ADDRESS: 0xe23380ae575D990BebB3b81DB2F90Ce7eDbB6dDa
-
-## 🤖 | Features:
-- **Auto registration/login**
-- **Auto-completion of all tasks**
-- **Auto-farm points**
-
-
-## 📝 | Description:
-[FARM MODULES]
-
-The expansion delay between keepalive requests is 120 seconds, so it is recommended to use +- the same value in CYCLE FARMING MODULE.
-
-[CAPTCHA]
-
-In this version, the captcha is solved using services (2captcha, anti-captcha) because the developers changed the mathematical captcha to letters, numbers and symbols. I tried to write my own solution, but alas, the result is too bad. Capsolver also solves very badly.
-
-[DATABASE]
-
-A database is used to save time and optimize. In this case, the script do not need to solve the captcha every time log in. (The old authorization token is used)
-
-[EMAILS]
-
-If you receive an error that your mail is not supported, go to the configuration and add an IMAP server for your mail domain. It is important to remember that popular services use application passwords instead of email passwords. For example, for Gmail mail, you need to enter not a password, but an application code, otherwise you will receive an error.
-
+# Bot for Dawn Extension [1.7]
 
 ## ⚙️ Config (config > settings.yaml):
 
